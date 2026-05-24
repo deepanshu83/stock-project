@@ -1,212 +1,226 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Navbar from './components/Navbar'
+import HeroSection from './components/HeroSection'
 import StockCard from './components/StockCard'
 import StockChart from './components/StockChart'
 import StatsGrid from './components/StatsGrid'
-import { fetchStockInfo, fetchHistory } from './services/api'
+import ComparisonTable from './components/ComparisonTable'
+import SectorPerformance from './components/SectorPerformance'
+import {
+  fetchMarketOverview,
+  fetchAllStocks,
+  fetchStockHistory,
+  fetchStockTech,
+  fetchSectorPerformance,
+} from './services/api'
 
-const STOCKS_LIST = ['TCS', 'RELIANCE', 'INFY', 'HDFCBANK', 'WIPRO']
+const STOCKS_LIST = [
+  'TCS',
+  'RELIANCE',
+  'INFY',
+  'HDFCBANK',
+  'WIPRO',
+  'BAJFINANCE',
+  'ICICIBANK',
+  'SBIN',
+  'MARUTI',
+  'TATAMOTORS',
+  'ADANIENT',
+  'SUNPHARMA',
+  'TITAN',
+  'ITC',
+  'LTIM',
+]
+
+const PERIODS = ['1mo', '3mo', '6mo', '1y']
 
 export default function App() {
+  const [overview, setOverview] = useState(null)
   const [stocks, setStocks] = useState([])
+  const [sectorData, setSectorData] = useState([])
   const [selected, setSelected] = useState('TCS')
-  const [selectedStock, setStock] = useState(null)
-  const [history, setHistory] = useState([])
   const [period, setPeriod] = useState('1y')
+  const [history, setHistory] = useState([])
+  const [technical, setTechnical] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [chartLoading, setChartLoad] = useState(false)
+  const [chartLoading, setChartLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [lastUpdated, setUpdated] = useState(null)
+  const [showBollinger, setShowBollinger] = useState(true)
 
-  const loadAll = useCallback(async () => {
+  const selectedStock = useMemo(
+    () => stocks.find((stock) => stock.ticker === selected),
+    [stocks, selected]
+  )
+
+  const totalPortfolioValue = useMemo(
+    () => stocks.reduce((sum, stock) => sum + (stock.current_price || 0), 0),
+    [stocks]
+  )
+
+  const bestPerformer = useMemo(() => {
+    return [...stocks]
+      .filter((stock) => typeof stock.day_percent === 'number')
+      .sort((a, b) => b.day_percent - a.day_percent)[0]
+  }, [stocks])
+
+  const worstPerformer = useMemo(() => {
+    return [...stocks]
+      .filter((stock) => typeof stock.day_percent === 'number')
+      .sort((a, b) => a.day_percent - b.day_percent)[0]
+  }, [stocks])
+
+  const loadDashboard = useCallback(async () => {
     try {
       setError(null)
-      const results = await Promise.all(
-        STOCKS_LIST.map((t) => fetchStockInfo(t))
-      )
-      setStocks(results)
-      const sel = results.find((s) => s.ticker === selected)
-      if (sel) setStock(sel)
-      setUpdated(new Date().toISOString())
+      setLoading(true)
+      const [overviewRes, stockRes, sectorRes] = await Promise.all([
+        fetchMarketOverview(),
+        fetchAllStocks(),
+        fetchSectorPerformance(),
+      ])
+      setOverview(overviewRes)
+      setStocks(stockRes.stocks || [])
+      setSectorData(sectorRes.sectors || [])
+      if (!selected && stockRes.stocks?.length) {
+        setSelected(stockRes.stocks[0].ticker)
+      }
     } catch (err) {
-      setError('Data nahi aaya. FastAPI chal r rahi hai? (localhost:8000)')
+      setError('Data nahi aaya. Backend chal rahi hai? (localhost:8000)')
+      console.error(err)
     } finally {
       setLoading(false)
     }
   }, [selected])
 
-  const loadChart = useCallback(async (ticker, p) => {
-    setChartLoad(true)
-    try {
-      const data = await fetchHistory(ticker, p)
-      setHistory(data.history)
-    } catch (err) {
-      console.error('Chart error:', err)
-    } finally {
-      setChartLoad(false)
-    }
-  }, [])
-
-  useEffect(() => { loadAll() }, [loadAll])
+  const loadSelectedStock = useCallback(
+    async (ticker, periodValue) => {
+      setChartLoading(true)
+      try {
+        const [historyRes, techRes] = await Promise.all([
+          fetchStockHistory(ticker, periodValue),
+          fetchStockTech(ticker),
+        ])
+        setHistory(historyRes.history || [])
+        setTechnical(techRes)
+      } catch (err) {
+        console.error('Chart load failed', err)
+      } finally {
+        setChartLoading(false)
+      }
+    },
+    []
+  )
 
   useEffect(() => {
-    loadChart(selected, period)
-    const s = stocks.find((s) => s.ticker === selected)
-    if (s) setStock(s)
-  }, [selected, period, stocks, loadChart])
+    loadDashboard()
+  }, [loadDashboard])
 
-  if (loading) return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 16,
-    }}>
-      <div style={{ fontSize: 40 }}>📊</div>
-      <div style={{ fontSize: 18, fontWeight: 600 }}>
-        Stock data aa raha hai...
+  useEffect(() => {
+    if (selected) {
+      loadSelectedStock(selected, period)
+    }
+  }, [selected, period, loadSelectedStock])
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: 24 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div className="skeleton title-skeleton" />
+          <div className="skeleton hero-skeleton" />
+          <div className="skeleton grid-skeleton" />
+        </div>
       </div>
-      <div style={{
-        fontSize: 13,
-        color: 'var(--text-muted)',
-      }}>
-        Yahoo Finance se live data fetch ho raha hai
-      </div>
-    </div>
-  )
+    )
+  }
 
-  if (error) return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 16,
-      padding: 24,
-      textAlign: 'center',
-    }}>
-      <div style={{ fontSize: 40 }}>⚠️</div>
-      <div style={{
-        color: 'var(--danger)',
-        fontSize: 16,
-        maxWidth: 400,
-      }}>
-        {error}
-      </div>
-      <button
-        onClick={() => { setLoading(true); loadAll() }}
-        style={{
-          background: 'var(--primary)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 10,
-          padding: '10px 24px',
-          fontSize: 14,
-          fontWeight: 700,
-          cursor: 'pointer',
-        }}
-      >
-        Dobara Try Karo
-      </button>
-    </div>
-  )
-
-  return (
-    <div style={{ minHeight: '100vh' }}>
-      <Navbar lastUpdated={lastUpdated} />
-
-      <div style={{
-        maxWidth: 1200,
-        margin: '0 auto',
-        padding: '24px 20px',
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: 20,
-        }}>
+  if (error) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--bg)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 42, marginBottom: 16 }}>⚠️</div>
+          <div style={{ color: 'var(--danger)', fontSize: 18, marginBottom: 12 }}>{error}</div>
           <button
-            onClick={loadAll}
+            onClick={loadDashboard}
             style={{
-              background: 'var(--card)',
-              color: 'var(--text-sec)',
-              border: '1px solid var(--border)',
-              borderRadius: 10,
-              padding: '8px 18px',
-              fontSize: 13,
-              fontWeight: 600,
+              background: 'var(--primary)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 12,
+              padding: '12px 26px',
+              fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            🔄 Refresh
+            Dobara try karo
           </button>
         </div>
+      </div>
+    )
+  }
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '300px 1fr',
-          gap: 20,
-          alignItems: 'start',
-        }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}>
-            <div style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: 'var(--text-muted)',
-              letterSpacing: 1.5,
-              marginBottom: 4,
-            }}>
-              INDIAN STOCKS
-            </div>
-            {stocks.map((stock) => (
-              <StockCard
-                key={stock.ticker}
-                stock={stock}
-                isSelected={stock.ticker === selected}
-                onClick={setSelected}
-              />
-            ))}
-          </div>
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
+      <Navbar lastUpdated={overview?.last_updated} />
+      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 40px' }}>
+        <HeroSection
+          overview={overview}
+          totalValue={totalPortfolioValue}
+          bestPerformer={bestPerformer}
+          worstPerformer={worstPerformer}
+        />
 
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-          }}>
-            {chartLoading ? (
+        <section style={{ marginTop: 24 }}>
+          <div className="dashboard-grid">
+            <aside style={{ position: 'sticky', top: 92, alignSelf: 'start' }}>
               <div style={{
-                background: 'var(--card)',
                 border: '1px solid var(--border)',
-                borderRadius: 16,
-                height: 340,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-muted)',
-                gap: 10,
+                borderRadius: 20,
+                background: 'var(--card)',
+                padding: 20,
               }}>
-                📊 Chart load ho raha hai...
+                <div style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  color: 'var(--text-muted)',
+                  marginBottom: 14,
+                }}>Stock Watchlist</div>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {stocks.map((stock) => (
+                    <StockCard
+                      key={stock.ticker}
+                      stock={stock}
+                      isSelected={stock.ticker === selected}
+                      onClick={setSelected}
+                    />
+                  ))}
+                </div>
               </div>
-            ) : (
+            </aside>
+
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <StockChart
                 history={history}
                 ticker={selected}
                 period={period}
                 onPeriodChange={setPeriod}
+                showBollinger={showBollinger}
+                toggleBollinger={() => setShowBollinger((prev) => !prev)}
+                technical={technical}
               />
-            )}
-
-            <StatsGrid stock={selectedStock} />
+              <StatsGrid stock={selectedStock} technical={technical} />
+            </section>
           </div>
-        </div>
-      </div>
+        </section>
+
+        <section style={{ marginTop: 30 }}>
+          <ComparisonTable stocks={stocks} />
+        </section>
+
+        <section style={{ marginTop: 30 }}>
+          <SectorPerformance sectors={sectorData} />
+        </section>
+      </main>
     </div>
   )
 }
