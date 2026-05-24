@@ -1,6 +1,8 @@
 const BASE_URL = 'http://localhost:8000'
 
-const fetchWithTimeout = async (url, timeout = 10000) => {
+// Default timeout: 60 seconds (yfinance needs time on first load)
+// /stocks/all uses 120 seconds (15 stocks parallel still takes time)
+const fetchWithTimeout = async (url, timeout = 60000) => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeout)
   try {
@@ -35,31 +37,32 @@ const handleResponse = async (response, defaultMsg) => {
 }
 
 export const fetchMarketOverview = async () => {
-  const res = await fetchWithTimeout(`${BASE_URL}/market/overview`)
+  const res = await fetchWithTimeout(`${BASE_URL}/market/overview`, 60000)
   return handleResponse(res, 'Market overview nahi aaya')
 }
 
+// 2 minutes for /stocks/all — 15 stocks concurrently still takes time on cold start
 export const fetchAllStocks = async () => {
-  const res = await fetchWithTimeout(`${BASE_URL}/stocks/all`)
+  const res = await fetchWithTimeout(`${BASE_URL}/stocks/all`, 120000)
   return handleResponse(res, 'Stock list nahi aaya')
 }
 
 export const fetchStockHistory = async (ticker, period = '1y') => {
-  const res = await fetchWithTimeout(`${BASE_URL}/stock/${ticker}/history?period=${period}`)
+  const res = await fetchWithTimeout(`${BASE_URL}/stock/${ticker}/history?period=${period}`, 60000)
   return handleResponse(res, 'History nahi aaya')
 }
 
 export const fetchStockTech = async (ticker) => {
-  const res = await fetchWithTimeout(`${BASE_URL}/stock/${ticker}/technical`)
+  const res = await fetchWithTimeout(`${BASE_URL}/stock/${ticker}/technical`, 60000)
   return handleResponse(res, 'Technical data nahi aaya')
 }
 
 export const fetchSectorPerformance = async () => {
-  const res = await fetchWithTimeout(`${BASE_URL}/sector/performance`)
+  const res = await fetchWithTimeout(`${BASE_URL}/sector/performance`, 60000)
   return handleResponse(res, 'Sector performance nahi aaya')
 }
 
 export const fetchCompare = async () => {
-  const res = await fetchWithTimeout(`${BASE_URL}/compare`)
+  const res = await fetchWithTimeout(`${BASE_URL}/compare`, 60000)
   return handleResponse(res, 'Compare data nahi aaya')
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Navbar from './components/Navbar'
 import HeroSection from './components/HeroSection'
 import StockCard from './components/StockCard'
@@ -23,6 +23,185 @@ const STOCKS_LIST = [
 
 const PERIODS = ['1mo', '3mo', '6mo', '1y']
 
+// Loading messages shown at different elapsed time thresholds
+const LOADING_MESSAGES = [
+  { maxSec: 10,  msg: 'Connecting to server...' },
+  { maxSec: 30,  msg: 'Yahoo Finance se data aa raha hai...' },
+  { maxSec: 60,  msg: '15 stocks ka data fetch ho raha hai, thoda wait karo...' },
+  { maxSec: Infinity, msg: 'Bahut slow hai — agar 2 min ho jayein toh retry karo' },
+]
+
+function getLoadingMessage(elapsed) {
+  for (const entry of LOADING_MESSAGES) {
+    if (elapsed < entry.maxSec) return entry.msg
+  }
+  return LOADING_MESSAGES[LOADING_MESSAGES.length - 1].msg
+}
+
+// Progress: reaches 100% at ~30 seconds, then stays at 99% so it never "completes" prematurely
+function getProgress(elapsed) {
+  if (elapsed >= 30) return 99
+  return Math.min(99, Math.round((elapsed / 30) * 100))
+}
+
+// ============================================================
+// LoadingScreen component
+// ============================================================
+function LoadingScreen({ elapsed, loadedTickers }) {
+  const message = getLoadingMessage(elapsed)
+  const progress = getProgress(elapsed)
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--bg)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    }}>
+      <div style={{ width: '100%', maxWidth: 520, textAlign: 'center' }}>
+
+        {/* Animated chart icon */}
+        <div style={{ marginBottom: 28 }}>
+          <svg
+            width="72" height="72" viewBox="0 0 72 72" fill="none"
+            style={{ animation: 'chartPulse 1.6s ease-in-out infinite' }}
+          >
+            <rect width="72" height="72" rx="18" fill="rgba(79,142,247,0.12)" />
+            <polyline
+              points="10,52 22,34 34,42 46,22 62,28"
+              stroke="#4F8EF7"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+              style={{ animation: 'dashDraw 2s linear infinite' }}
+            />
+            <circle cx="62" cy="28" r="4" fill="#4F8EF7" style={{ animation: 'blink 1s ease-in-out infinite' }} />
+          </svg>
+        </div>
+
+        {/* Title */}
+        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+          Stock Dashboard Load ho raha hai
+        </div>
+
+        {/* Dynamic message */}
+        <div style={{
+          fontSize: 14,
+          color: 'var(--text-sec)',
+          marginBottom: 28,
+          minHeight: 20,
+          transition: 'all 0.4s ease',
+        }}>
+          {message}
+        </div>
+
+        {/* Progress bar */}
+        <div style={{
+          background: '#1E2436',
+          borderRadius: 999,
+          height: 8,
+          marginBottom: 8,
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${progress}%`,
+            background: 'linear-gradient(90deg, #4F8EF7, #7B61FF)',
+            borderRadius: 999,
+            transition: 'width 1s linear',
+          }} />
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 28 }}>
+          {elapsed}s elapsed
+        </div>
+
+        {/* Stock ticker list */}
+        <div style={{
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 16,
+          padding: '16px 20px',
+          marginBottom: 20,
+          textAlign: 'left',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: 'var(--text-muted)', marginBottom: 12 }}>
+            STOCKS LOADING
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '8px 12px',
+          }}>
+            {STOCKS_LIST.map(ticker => {
+              const done = loadedTickers.includes(ticker)
+              return (
+                <div key={ticker} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 12,
+                  color: done ? '#4ade80' : 'var(--text-muted)',
+                  transition: 'color 0.3s ease',
+                }}>
+                  {done ? (
+                    <span style={{ fontSize: 13 }}>✓</span>
+                  ) : (
+                    <span style={{
+                      display: 'inline-block',
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      border: '2px solid #4F8EF7',
+                      borderTopColor: 'transparent',
+                      animation: 'spin 0.8s linear infinite',
+                      flexShrink: 0,
+                    }} />
+                  )}
+                  {ticker}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Pro tip */}
+        <div style={{
+          fontSize: 12,
+          color: 'var(--text-muted)',
+          background: 'rgba(79,142,247,0.07)',
+          border: '1px solid rgba(79,142,247,0.15)',
+          borderRadius: 10,
+          padding: '10px 16px',
+        }}>
+          💡 <strong style={{ color: 'var(--primary)' }}>Tip:</strong>{' '}
+          Refresh ke baad data cached rahega aur faster load hoga
+        </div>
+      </div>
+
+      {/* Keyframe styles injected inline */}
+      <style>{`
+        @keyframes chartPulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.06); opacity: 0.85; }
+        }
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.2; }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// ============================================================
+// SkeletonCard (unchanged)
+// ============================================================
 function SkeletonCard() {
   return (
     <div style={{
@@ -35,6 +214,9 @@ function SkeletonCard() {
   )
 }
 
+// ============================================================
+// App
+// ============================================================
 export default function App() {
   const [overview, setOverview] = useState(null)
   const [stocks, setStocks] = useState([])
@@ -49,6 +231,11 @@ export default function App() {
   const [showBollinger, setShowBollinger] = useState(true)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  // Loading-screen state
+  const [loadingElapsed, setLoadingElapsed] = useState(0)
+  const [loadedTickers, setLoadedTickers] = useState([])
+  const loadingStartRef = useRef(null)
 
   const selectedStock = useMemo(
     () => stocks.find((stock) => stock.ticker === selected),
@@ -71,6 +258,29 @@ export default function App() {
       .filter((stock) => typeof stock.day_percent === 'number')
       .sort((a, b) => a.day_percent - b.day_percent)[0]
   }, [stocks])
+
+  // Tick loading elapsed counter while loading
+  useEffect(() => {
+    if (!loading) return
+    loadingStartRef.current = Date.now()
+    setLoadingElapsed(0)
+    const interval = setInterval(() => {
+      setLoadingElapsed(Math.floor((Date.now() - loadingStartRef.current) / 1000))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [loading])
+
+  // Simulate per-stock checkmarks as time passes (each stock ~2s apart)
+  useEffect(() => {
+    if (!loading) return
+    setLoadedTickers([])
+    const timers = STOCKS_LIST.map((ticker, i) =>
+      setTimeout(() => {
+        setLoadedTickers(prev => [...prev, ticker])
+      }, (i + 1) * 2000)   // stagger 2s per stock — purely visual
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [loading])
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -116,7 +326,7 @@ export default function App() {
     []
   )
 
-  // Update elapsed time every second
+  // Update elapsed time every second (post-load "last updated" counter)
   useEffect(() => {
     if (!lastUpdated) return
     const interval = setInterval(() => {
@@ -135,35 +345,17 @@ export default function App() {
     }
   }, [selected, period, loadSelectedStock])
 
+  // ── Loading screen ──────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: 24 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ height: 26, borderRadius: 12, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite', marginBottom: 24 }} />
-          <div style={{ height: 200, borderRadius: 20, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite', marginBottom: 20 }} />
-          
-          <div className="dashboard-grid">
-            <aside>
-              <div style={{ border: '1px solid var(--border)', borderRadius: 20, background: 'var(--card)', padding: 20 }}>
-                <div style={{ height: 14, borderRadius: 8, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite', marginBottom: 14, width: 160 }} />
-                <div>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <SkeletonCard key={i} />
-                  ))}
-                </div>
-              </div>
-            </aside>
-            
-            <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ height: 400, borderRadius: 20, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite' }} />
-              <div style={{ height: 300, borderRadius: 20, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite' }} />
-            </section>
-          </div>
-        </div>
-      </div>
+      <LoadingScreen
+        elapsed={loadingElapsed}
+        loadedTickers={loadedTickers}
+      />
     )
   }
 
+  // ── Error screen (unchanged design) ────────────────────────
   if (error) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--bg)' }}>
@@ -172,7 +364,7 @@ export default function App() {
           <div style={{ color: 'var(--danger)', fontSize: 18, marginBottom: 24, fontWeight: 600 }}>
             {error}
           </div>
-          
+
           <div style={{
             background: 'rgba(79, 142, 247, 0.1)',
             border: '1px solid rgba(79, 142, 247, 0.3)',
@@ -223,12 +415,8 @@ export default function App() {
                 fontSize: 14,
                 transition: 'all 0.2s'
               }}
-              onMouseOver={(e) => {
-                e.target.style.background = 'rgba(79, 142, 247, 0.1)'
-              }}
-              onMouseOut={(e) => {
-                e.target.style.background = 'transparent'
-              }}
+              onMouseOver={(e) => { e.target.style.background = 'rgba(79, 142, 247, 0.1)' }}
+              onMouseOut={(e) => { e.target.style.background = 'transparent' }}
             >
               📖 API Docs
             </button>
@@ -238,6 +426,7 @@ export default function App() {
     )
   }
 
+  // ── Main dashboard (unchanged) ──────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       <Navbar lastUpdated={overview?.last_updated} />
