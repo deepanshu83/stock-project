@@ -15,24 +15,25 @@ import {
 } from './services/api'
 
 const STOCKS_LIST = [
-  'TCS',
-  'RELIANCE',
-  'INFY',
-  'HDFCBANK',
-  'WIPRO',
-  'BAJFINANCE',
-  'ICICIBANK',
-  'SBIN',
-  'MARUTI',
-  'TATAMOTORS',
-  'ADANIENT',
-  'SUNPHARMA',
-  'TITAN',
-  'ITC',
-  'LTIM',
+  'TCS', 'RELIANCE', 'INFY', 'HDFCBANK', 'WIPRO',
+  'BAJFINANCE', 'ICICIBANK', 'SBIN', 'MARUTI',
+  'TATAMOTORS', 'ADANIENT', 'SUNPHARMA', 'TITAN',
+  'ITC', 'LTIM'
 ]
 
 const PERIODS = ['1mo', '3mo', '6mo', '1y']
+
+function SkeletonCard() {
+  return (
+    <div style={{
+      height: 100,
+      borderRadius: 20,
+      background: '#1E2436',
+      animation: 'pulse 1.4s ease-in-out infinite',
+      marginBottom: 12
+    }} />
+  )
+}
 
 export default function App() {
   const [overview, setOverview] = useState(null)
@@ -46,6 +47,8 @@ export default function App() {
   const [chartLoading, setChartLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showBollinger, setShowBollinger] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
   const selectedStock = useMemo(
     () => stocks.find((stock) => stock.ticker === selected),
@@ -73,6 +76,7 @@ export default function App() {
     try {
       setError(null)
       setLoading(true)
+      setElapsedSeconds(0)
       const [overviewRes, stockRes, sectorRes] = await Promise.all([
         fetchMarketOverview(),
         fetchAllStocks(),
@@ -81,11 +85,12 @@ export default function App() {
       setOverview(overviewRes)
       setStocks(stockRes.stocks || [])
       setSectorData(sectorRes.sectors || [])
+      setLastUpdated(new Date())
       if (!selected && stockRes.stocks?.length) {
         setSelected(stockRes.stocks[0].ticker)
       }
     } catch (err) {
-      setError('Data nahi aaya. Backend chal rahi hai? (localhost:8000)')
+      setError(err.message || 'Data nahi aaya. Backend chal rahi hai? (localhost:8000)')
       console.error(err)
     } finally {
       setLoading(false)
@@ -111,6 +116,15 @@ export default function App() {
     []
   )
 
+  // Update elapsed time every second
+  useEffect(() => {
+    if (!lastUpdated) return
+    const interval = setInterval(() => {
+      setElapsedSeconds(Math.floor((new Date() - lastUpdated) / 1000))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [lastUpdated])
+
   useEffect(() => {
     loadDashboard()
   }, [loadDashboard])
@@ -125,9 +139,26 @@ export default function App() {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: 24 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div className="skeleton title-skeleton" />
-          <div className="skeleton hero-skeleton" />
-          <div className="skeleton grid-skeleton" />
+          <div style={{ height: 26, borderRadius: 12, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite', marginBottom: 24 }} />
+          <div style={{ height: 200, borderRadius: 20, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite', marginBottom: 20 }} />
+          
+          <div className="dashboard-grid">
+            <aside>
+              <div style={{ border: '1px solid var(--border)', borderRadius: 20, background: 'var(--card)', padding: 20 }}>
+                <div style={{ height: 14, borderRadius: 8, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite', marginBottom: 14, width: 160 }} />
+                <div>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <SkeletonCard key={i} />
+                  ))}
+                </div>
+              </div>
+            </aside>
+            
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ height: 400, borderRadius: 20, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite' }} />
+              <div style={{ height: 300, borderRadius: 20, background: '#1E2436', animation: 'pulse 1.4s ease-in-out infinite' }} />
+            </section>
+          </div>
         </div>
       </div>
     )
@@ -136,23 +167,72 @@ export default function App() {
   if (error) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--bg)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 42, marginBottom: 16 }}>⚠️</div>
-          <div style={{ color: 'var(--danger)', fontSize: 18, marginBottom: 12 }}>{error}</div>
-          <button
-            onClick={loadDashboard}
-            style={{
-              background: 'var(--primary)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 12,
-              padding: '12px 26px',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            Dobara try karo
-          </button>
+        <div style={{ textAlign: 'center', maxWidth: 500 }}>
+          <div style={{ fontSize: 64, marginBottom: 20 }}>⚠️</div>
+          <div style={{ color: 'var(--danger)', fontSize: 18, marginBottom: 24, fontWeight: 600 }}>
+            {error}
+          </div>
+          
+          <div style={{
+            background: 'rgba(79, 142, 247, 0.1)',
+            border: '1px solid rgba(79, 142, 247, 0.3)',
+            borderRadius: 12,
+            padding: 20,
+            marginBottom: 24,
+            textAlign: 'left',
+            fontSize: 13,
+            lineHeight: '1.8',
+            color: 'var(--text-sec)'
+          }}>
+            <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 12 }}>Yeh check karo:</div>
+            <div>✓ FastAPI chal rahi hai? <code style={{ color: 'var(--primary)', fontSize: 12 }}>localhost:8000</code></div>
+            <div>✓ Terminal mein <code style={{ color: 'var(--primary)', fontSize: 12 }}>python -m uvicorn main:app --reload --port 8000</code> run kiya?</div>
+            <div>✓ venv activate hai?</div>
+            <div>✓ Internet chal rahi hai?</div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={loadDashboard}
+              style={{
+                background: 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 12,
+                padding: '12px 26px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: 14,
+                transition: 'background 0.2s'
+              }}
+              onMouseOver={(e) => e.target.style.background = 'rgba(79, 142, 247, 0.8)'}
+              onMouseOut={(e) => e.target.style.background = 'var(--primary)'}
+            >
+              🔄 Dobara try karo
+            </button>
+            <button
+              onClick={() => window.open('http://localhost:8000/docs', '_blank')}
+              style={{
+                background: 'transparent',
+                color: 'var(--primary)',
+                border: '1px solid var(--primary)',
+                borderRadius: 12,
+                padding: '12px 26px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: 14,
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.background = 'rgba(79, 142, 247, 0.1)'
+              }}
+              onMouseOut={(e) => {
+                e.target.style.background = 'transparent'
+              }}
+            >
+              📖 API Docs
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -168,6 +248,17 @@ export default function App() {
           bestPerformer={bestPerformer}
           worstPerformer={worstPerformer}
         />
+
+        {lastUpdated && (
+          <div style={{
+            fontSize: 12,
+            color: 'var(--text-muted)',
+            marginTop: 16,
+            marginBottom: 24
+          }}>
+            Last updated: {elapsedSeconds < 60 ? `${elapsedSeconds}s ago` : `${Math.floor(elapsedSeconds / 60)}m ago`}
+          </div>
+        )}
 
         <section style={{ marginTop: 24 }}>
           <div className="dashboard-grid">
