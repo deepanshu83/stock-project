@@ -1,26 +1,24 @@
-import { LineChart, Line, ResponsiveContainer } from 'recharts'
-
-const SECTOR_BADGES = {
-  IT: 'IT',
-  Banking: 'Banking',
-  Auto: 'Auto',
-  Conglomerate: 'Conglomerate',
-  Pharma: 'Pharma',
-  Consumer: 'Consumer',
+const SECTOR_COLORS = {
+  IT:           { bg: 'rgba(79,142,247,0.12)',  text: '#4F8EF7' },
+  Banking:      { bg: 'rgba(0,196,140,0.12)',   text: '#00C48C' },
+  Auto:         { bg: 'rgba(255,184,0,0.12)',   text: '#FFB800' },
+  Conglomerate: { bg: 'rgba(160,100,255,0.12)', text: '#A064FF' },
+  Pharma:       { bg: 'rgba(255,100,124,0.12)', text: '#FF647C' },
+  Consumer:     { bg: 'rgba(255,140,60,0.12)',  text: '#FF8C3C' },
 }
 
 export default function StockCard({ stock, isSelected, onClick }) {
   const performance = stock.day_percent || 0
-  const isPositive = performance >= 0
+  const isPositive  = performance >= 0
+  const sector      = SECTOR_COLORS[stock.sector] || { bg: 'rgba(255,255,255,0.08)', text: '#8892A4' }
+
   const borderColor = isSelected
     ? 'var(--primary)'
     : performance > 2
-    ? 'rgba(0, 196, 140, 0.25)'
+    ? 'rgba(0,196,140,0.3)'
     : performance < -2
-    ? 'rgba(255, 100, 124, 0.25)'
+    ? 'rgba(255,100,124,0.3)'
     : 'var(--border)'
-
-  const sparkData = stock.recent_history?.map((row) => ({ value: row.close })) || []
 
   return (
     <button
@@ -30,87 +28,78 @@ export default function StockCard({ stock, isSelected, onClick }) {
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'stretch',
+        gap: 6,
         color: 'inherit',
-        background: 'var(--card)',
+        background: isSelected ? 'rgba(79,142,247,0.07)' : 'var(--card)',
         border: `1.5px solid ${borderColor}`,
-        borderRadius: 18,
-        padding: 18,
+        borderRadius: 14,
+        padding: '10px 12px',
         cursor: 'pointer',
         textAlign: 'left',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        boxShadow: isSelected ? '0 20px 50px rgba(79, 142, 247, 0.12)' : 'none',
+        transition: 'all 0.18s ease',
+        boxShadow: isSelected ? '0 8px 24px rgba(79,142,247,0.12)' : 'none',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 0.7 }}>{stock.ticker}</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{stock.sector}</div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: isPositive ? 'var(--success)' : 'var(--danger)',
-          }}>
-            {isPositive ? '▲' : '▼'} {performance?.toFixed(2)}%
+      {/* Row 1: Ticker + Change % */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.5 }}>
+            {stock.ticker}
           </span>
           <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            padding: '4px 10px',
-            borderRadius: 999,
-            background: stock.signal === 'BUY' ? 'var(--success)22' : 'var(--warning)22',
-            color: stock.signal === 'BUY' ? 'var(--success)' : 'var(--warning)',
+            fontSize: 10,
+            fontWeight: 600,
+            padding: '2px 6px',
+            borderRadius: 6,
+            background: sector.bg,
+            color: sector.text,
           }}>
-            {stock.signal}
+            {stock.sector}
           </span>
         </div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <span style={{ fontSize: 24, fontWeight: 800 }}>₹{stock.current_price?.toLocaleString('en-IN')}</span>
         <span style={{
           fontSize: 11,
           fontWeight: 700,
-          padding: '4px 10px',
-          borderRadius: 999,
-          color: 'var(--text)',
-          background: 'rgba(79, 142, 247, 0.15)',
+          color: isPositive ? 'var(--success)' : 'var(--danger)',
         }}>
-          {SECTOR_BADGES[stock.sector] || stock.sector}
+          {isPositive ? '▲' : '▼'} {Math.abs(performance).toFixed(2)}%
         </span>
       </div>
 
-      <div style={{ width: '100%', height: 60, marginBottom: 12 }}>
-        {sparkData.length ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={sparkData}>
-              <Line
-                dataKey="value"
-                stroke={isPositive ? 'var(--success)' : 'var(--danger)'}
-                strokeWidth={2}
-                dot={false}
-                isAnimationActive={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        ) : (
-          <div style={{ height: '100%', background: 'rgba(255,255,255,0.04)', borderRadius: 12 }} />
-        )}
+      {/* Row 2: Price + Signal */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.5 }}>
+          {stock.current_price
+            ? `₹${stock.current_price.toLocaleString('en-IN')}`
+            : <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>N/A</span>
+          }
+        </span>
+        <span style={{
+          fontSize: 10,
+          fontWeight: 700,
+          padding: '3px 8px',
+          borderRadius: 6,
+          background: stock.signal === 'BUY' ? 'rgba(0,196,140,0.15)' : 'rgba(255,184,0,0.15)',
+          color: stock.signal === 'BUY' ? 'var(--success)' : 'var(--warning)',
+        }}>
+          {stock.signal || '—'}
+        </span>
       </div>
 
-      <div style={{
-        fontSize: 11,
-        color: 'var(--text-muted)',
-        borderTop: '1px solid var(--border)',
-        paddingTop: 12,
-        display: 'flex',
-        justifyContent: 'space-between',
-      }}>
-        <span>52W high {stock.week_52?.high?.toLocaleString('en-IN')}</span>
-        <span>52W low {stock.week_52?.low?.toLocaleString('en-IN')}</span>
-      </div>
+      {/* Row 3: 52W range */}
+      {stock.week_52?.high && (
+        <div style={{
+          fontSize: 10,
+          color: 'var(--text-muted)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          paddingTop: 4,
+          borderTop: '1px solid var(--border)',
+        }}>
+          <span>H: ₹{stock.week_52.high.toLocaleString('en-IN')}</span>
+          <span>L: ₹{stock.week_52.low.toLocaleString('en-IN')}</span>
+        </div>
+      )}
     </button>
   )
 }

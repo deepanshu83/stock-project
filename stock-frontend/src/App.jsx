@@ -449,36 +449,55 @@ export default function App() {
           </div>
         )}
 
-        <section style={{ marginTop: 24 }}>
+        <section style={{ marginTop: 16 }}>
           <div className="dashboard-grid">
+            {/* ── Left sidebar: internally scrollable, 2-col card grid ── */}
             <aside style={{ position: 'sticky', top: 92, alignSelf: 'start' }}>
               <div style={{
                 border: '1px solid var(--border)',
                 borderRadius: 20,
                 background: 'var(--card)',
-                padding: 20,
+                padding: 14,
               }}>
                 <div style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 700,
                   letterSpacing: 1.5,
                   color: 'var(--text-muted)',
-                  marginBottom: 14,
-                }}>Stock Watchlist</div>
-                <div style={{ display: 'grid', gap: 12 }}>
-                  {stocks.map((stock) => (
-                    <StockCard
-                      key={stock.ticker}
-                      stock={stock}
-                      isSelected={stock.ticker === selected}
-                      onClick={setSelected}
-                    />
-                  ))}
+                  marginBottom: 10,
+                  paddingLeft: 2,
+                }}>WATCHLIST ({stocks.filter(s => !s.error).length}/{stocks.length})</div>
+
+                {/* Scrollable card area */}
+                <div style={{
+                  maxHeight: 'calc(100vh - 200px)',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  paddingRight: 4,
+                  /* thin scrollbar */
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'var(--border) transparent',
+                }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 8,
+                  }}>
+                    {stocks.map((stock) => (
+                      <StockCard
+                        key={stock.ticker}
+                        stock={stock}
+                        isSelected={stock.ticker === selected}
+                        onClick={setSelected}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </aside>
 
-            <section style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* ── Right: Chart + Stats ── */}
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <StockChart
                 history={history}
                 ticker={selected}
@@ -493,11 +512,11 @@ export default function App() {
           </div>
         </section>
 
-        <section style={{ marginTop: 30 }}>
+        <section style={{ marginTop: 16 }}>
           <ComparisonTable stocks={stocks} />
         </section>
 
-        <section style={{ marginTop: 30 }}>
+        <section style={{ marginTop: 16 }}>
           <SectorPerformance sectors={sectorData} />
         </section>
       </main>

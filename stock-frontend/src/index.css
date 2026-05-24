@@ -45,7 +45,7 @@ button {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) 1fr;
+  grid-template-columns: minmax(360px, 440px) 1fr;
   gap: 20px;
 }
 
