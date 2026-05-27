@@ -1,16 +1,40 @@
-# React + Vite
+# Stock Dashboard (Frontend) — React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ye frontend **FastAPI backend** se stock data fetch karke UI me charts, stats aur tables dikhata hai.
 
-Currently, two official plugins are available:
+## Backend Base URL
+- Default: `http://localhost:8000`
+- Frontend calls yahan se karta hai: `src/services/api.js`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## UI/Pages (high level)
+- **Dashboard load:**
+  - `/market/overview` (NIFTY 50 overview)
+  - `/stocks/all` (sab stocks ka summary)
+  - `/sector/performance` (sector-wise performance)
+- **Selected stock details:**
+  - `/stock/{ticker}/history?period=1y|6mo|3mo|1mo`
+  - `/stock/{ticker}/technical`
+- **Comparison & Sector sections:**
+  - `/compare`
+  - `/sector/performance`
 
-## React Compiler
+## Key Files
+- `src/App.jsx`
+  - Loading screen + dashboard state management
+  - Selected ticker/period based data fetching
+- `src/services/api.js`
+  - Backend ke endpoints ko call + timeouts + error handling
+- `src/components/*`
+  - `Navbar`, `HeroSection`, `StockCard`, `StockChart`, `StatsGrid`, `ComparisonTable`, `SectorPerformance`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Setup & Run (Frontend)
+```bash
+cd stock-frontend
+npm install
+npm run dev
+```
+Frontend typically `http://localhost:5173` par run hota hai.
 
-## Expanding the ESLint configuration
+## Note
+Backend heavy ho sakta hai (yFinance cold start), isliye `src/services/api.js` me longer timeouts aur frontend me proper loading/error states implemented hain.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
