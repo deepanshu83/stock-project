@@ -114,7 +114,7 @@ export default function StatsGrid({ stock, technical }) {
         </div>
       </div>
 
-      <div className="stats-grid-row-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14 }}>
+      <div className="stats-grid-row-3" style={{ display: 'grid', gap: 14 }}>
         <StatBox label="P/E ratio" value={stock.pe_ratio ? stock.pe_ratio.toFixed(2) : '—'} />
         <StatBox label="Market cap" value={stock.market_cap ? `₹${(stock.market_cap / 1_00_00_000_000).toFixed(2)}T` : '—'} />
         <StatBox label="Distance from 52W high" value={`${distance}%`} color={stock.current_price < high ? 'var(--danger)' : 'var(--success)'} />
@@ -135,7 +135,7 @@ export default function StatsGrid({ stock, technical }) {
         </div>
       </div>
 
-      <div className="stats-grid-row-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14 }}>
+      <div className="stats-grid-row-3" style={{ display: 'grid', gap: 14 }}>
         <StatBox label="52W High" value={`₹${formatNumber(stock.week_52?.high)}`} color="var(--success)" />
         <StatBox label="52W Low" value={`₹${formatNumber(stock.week_52?.low)}`} color="var(--danger)" />
         <StatBox label="MA 30" value={`₹${formatNumber(stock.averages?.ma_30)}`} color="var(--warning)" />
