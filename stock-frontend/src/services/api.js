@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://stock-backend-h23b.onrender.com'
 
 // Default timeout: 60 seconds (yfinance needs time on first load)
 // /stocks/all uses 120 seconds (15 stocks parallel still takes time)
@@ -12,9 +12,9 @@ const fetchWithTimeout = async (url, timeout = 60000) => {
   } catch (err) {
     clearTimeout(timer)
     if (err.name === 'AbortError') {
-      throw new Error('Request timeout — server slow hai ya band hai')
+      throw new Error('Request timeout — server slow hai ya backend band hai')
     }
-    throw new Error('FastAPI server nahi chal rahi — localhost:8000 check karo')
+    throw new Error('FastAPI backend reachable nahi hai — network ya backend URL check karo')
   }
 }
 

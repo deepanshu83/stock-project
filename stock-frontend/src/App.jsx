@@ -14,6 +14,8 @@ import {
   fetchSectorPerformance,
 } from './services/api'
 
+const API_ROOT = import.meta.env.VITE_API_URL || 'https://stock-backend-h23b.onrender.com'
+
 const STOCKS_LIST = [
   'TCS', 'RELIANCE', 'INFY', 'HDFCBANK', 'WIPRO',
   'BAJFINANCE', 'ICICIBANK', 'SBIN', 'MARUTI',
@@ -300,7 +302,7 @@ export default function App() {
         setSelected(stockRes.stocks[0].ticker)
       }
     } catch (err) {
-      setError(err.message || 'Data nahi aaya. Backend chal rahi hai? (localhost:8000)')
+      setError(err.message || 'Data nahi aaya. Backend chal rahi hai?')
       console.error(err)
     } finally {
       setLoading(false)
@@ -377,9 +379,8 @@ export default function App() {
             color: 'var(--text-sec)'
           }}>
             <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 12 }}>Yeh check karo:</div>
-            <div>✓ FastAPI chal rahi hai? <code style={{ color: 'var(--primary)', fontSize: 12 }}>localhost:8000</code></div>
-            <div>✓ Terminal mein <code style={{ color: 'var(--primary)', fontSize: 12 }}>python -m uvicorn main:app --reload --port 8000</code> run kiya?</div>
-            <div>✓ venv activate hai?</div>
+            <div>✓ Backend chal rahi hai? <code style={{ color: 'var(--primary)', fontSize: 12 }}>{API_ROOT}</code></div>
+            <div>✓ Backend URL environment variable set hai? <code style={{ color: 'var(--primary)', fontSize: 12 }}>VITE_API_URL</code></div>
             <div>✓ Internet chal rahi hai?</div>
           </div>
 
@@ -403,7 +404,7 @@ export default function App() {
               🔄 Dobara try karo
             </button>
             <button
-              onClick={() => window.open('http://localhost:8000/docs', '_blank')}
+              onClick={() => window.open(`${API_ROOT}/docs`, '_blank')}
               style={{
                 background: 'transparent',
                 color: 'var(--primary)',

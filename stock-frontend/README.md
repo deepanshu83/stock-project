@@ -3,8 +3,17 @@
 Ye frontend **FastAPI backend** se stock data fetch karke UI me charts, stats aur tables dikhata hai.
 
 ## Backend Base URL
-- Default: `http://localhost:8000`
-- Frontend calls yahan se karta hai: `src/services/api.js`
+- Default: `https://stock-backend-h23b.onrender.com`
+- Frontend uses environment variable: `src/services/api.js`
+
+## Environment Setup
+Create or update `stock-frontend/.env` with:
+
+```env
+VITE_API_URL=https://stock-backend-h23b.onrender.com
+```
+
+Then restart the Vite dev server.
 
 ## UI/Pages (high level)
 - **Dashboard load:**
