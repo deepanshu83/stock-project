@@ -431,7 +431,7 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
       <Navbar lastUpdated={overview?.last_updated} />
-      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 20px 40px' }}>
+      <main className="page-main">
         <HeroSection
           overview={overview}
           totalValue={totalPortfolioValue}
@@ -453,7 +453,7 @@ export default function App() {
         <section style={{ marginTop: 16 }}>
           <div className="dashboard-grid">
             {/* ── Left sidebar: internally scrollable, 2-col card grid ── */}
-            <aside style={{ position: 'sticky', top: 92, alignSelf: 'start' }}>
+            <aside className="dashboard-aside" style={{ alignSelf: 'start' }}>
               <div style={{
                 border: '1px solid var(--border)',
                 borderRadius: 20,
@@ -479,9 +479,8 @@ export default function App() {
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'var(--border) transparent',
                 }}>
-                  <div style={{
+                  <div className="watchlist-grid" style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
                     gap: 8,
                   }}>
                     {stocks.map((stock) => (

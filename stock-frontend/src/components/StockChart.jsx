@@ -136,7 +136,7 @@ export default function StockChart({ history, ticker, period, onPeriodChange, sh
         </div>
       </div>
 
-      <div style={{ width: '100%', height: 420 }}>
+      <div className="chart-wrapper" style={{ width: '100%', height: 420 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData}>
             <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />

@@ -66,11 +66,11 @@ export default function ComparisonTable({ stocks }) {
           <div style={{ fontSize: 20, fontWeight: 700 }}>Sector leaderboard</div>
         </div>
         <input
+          className="comparison-search-input"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search stock or sector"
           style={{
-            minWidth: 220,
             padding: '12px 16px',
             borderRadius: 14,
             border: '1px solid var(--border)',

@@ -14,7 +14,7 @@ export default function HeroSection({ overview, totalValue, bestPerformer, worst
       marginBottom: 24,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20, alignItems: 'center' }}>
-        <div style={{ minWidth: 260 }}>
+        <div style={{ flex: '1 1 260px', minWidth: 220 }}>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>
             NIFTY 50 snapshot
           </div>
@@ -45,7 +45,7 @@ export default function HeroSection({ overview, totalValue, bestPerformer, worst
           </div>
         </div>
 
-        <div style={{ flex: 1, minWidth: 320 }}>
+        <div style={{ flex: '1 1 280px', minWidth: 220 }}>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1.5 }}>
             Nifty trend
           </div>
@@ -58,7 +58,7 @@ export default function HeroSection({ overview, totalValue, bestPerformer, worst
           </div>
         </div>
 
-        <div style={{ minWidth: 240, display: 'grid', gap: 10 }}>
+        <div style={{ flex: '1 1 220px', minWidth: 220, display: 'grid', gap: 10 }}>
           <div style={{
             background: 'rgba(79, 142, 247, 0.08)',
             borderRadius: 18,
